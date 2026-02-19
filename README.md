@@ -1,61 +1,41 @@
 # CR Relief Shading
-This repo handles BlueTopo and Mosaic Multibeam data to create relief shading charts per a given tile region.
+This repo handles BlueTopo data to create relief shading charts per a given tile region. 
+
+Process: fetches bluetopo data --> runs hillshading --> combines UTM hillshades --> reprojects data to Mercator --> crops data to tile specifications --> encodes DEM to RGBA --> generates XYZ tiles.
 
 ## Environment
 I find it best to run this inside of a conda environment as gdal can be finicky. 
 `conda create -n relief -c conda-forge python=3.11 gdal=3.12.2`
 
-## BlueTopo HillShading and VRT
-This script generates hillshades for BlueTopo data in a given region, combines those hillshades into one file and then crops that file to a specified tile boundary.
+## Data
+You must have the appropriate data and file structure before running this.
 
-### Gathering BlueTopo Data
-See https://github.com/noaa-ocs-hydrography/BlueTopo for instructions on how to fetch BlueTopo data. 
+### BlueTopo Data
+You can download the BlueTopo data using the instructions from this repo: https://github.com/noaa-ocs-hydrography/BlueTopo. Run both the fetch_tiles() and build_vrt() commands.
+- Use your {tile}.gpkg as the area of interest.
+- The download path should be Tile_Data/{tile}/
 
-Make sure to run both the `fetch_tiles()` command and the `build_vrt()` command. This will generate both your BlueTopo/ and BlueTopo_VRT/ directories. `area_of_interest.gpkg` should be your {tile}.gpkg.
+### File Structure
 
-### Command
-`python hillshading/bluetopo_hillshading.py <tile> <base_dir>`
+- {base_dir}/
+    - {data_dir}/
+        - Tile_Bounds/
+            - {tile}.gpkg
+        - Tile_Data/
+            - {tile}
+                - BlueTopo/
+                - BlueTopo_VRT/
 
-Note that this script assumes you already downloaded the BLueTopo files and created a VRT in the steps above.
+{data_dir} is either No_Mosaic or Contains_Mosaic. I seperated these out because tiles containing multibeam data need to follow a different process than if they do not, specifically around extra cropping required which needs to be done on QGIS.
 
-Base Directory structure:
-- Tile_Data/
-    - {tile}/
-        - BlueTopo/
-        - BlueTopo_VRT/
-- Tile_Bounds/
-    - {tile}.gpkg
+Both BlueTopo/ and BlueTopo_VRT/ are generating when gathering the BlueTopo Data.
 
-
-## Mosaic Hillshading
-This script generates hillshading for Mosaic Multibeam data.
-
-### Gathering Mosaic Multibeam Data
-Use https://www.ncei.noaa.gov/maps/bathymetry/ to extract the data. The data source is Multibeam Mosaic and the cell sizeis 3 arc-second (~90m). Use the coordinates from your tile in "Enter Coordinates". 
-
-Save off the file in the same Tile_Data directory as your BlueTopo data like so:
-
-- Tile_Data/
-    - {tile}/
-        - Mosaic/
-            - Mosaic.tiff
+## Script
 
 ### Command
-`python hillshading/mosaic_hillshading.py <tile> <base_dir>`
+`python data/process_data.py`
 
-### Cropping
-Since mosaic data is super high res in some areas and contains random lines in others, we are going to want to crop it to only contain those high res areas. This must be done in QGIS...
-- Import the hillshading to QGIS
-- Create a polygon that encapsulates the region you want to keep
-- Use "Clip raster by mask extend" where your input layer in the hillshade and the mask layer is the polygon
-- Save off the cropped hillshading to the same location as your original Mosaic
-
-
-## Styling Relief Shading in QGIS
-In QGIS, style each hillshade as follows:
-- render type: singleband gray
-- blending mode: multiply
-- brightness: 20
-- contrast: 20
-
-The hillshade layers should sit on top of the VRT color layer.
+#### Optional Parameters
+- `--base_dir`: Base directory of No_Mosaic/ and Contains_Mosaic/
+- `--zoom_levels`: Zoom levels to generate XYZ tiles for
+- `--processes`: Number of processes to run on for tile generation

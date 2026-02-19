@@ -2,6 +2,9 @@ from pathlib import Path
 import shutil
 from osgeo import gdal
 from osgeo_utils import gdal2tiles
+from nbs.bluetopo import fetch_tiles, build_vrt
+
+gdal.SetConfigOption("CPL_LOG", "/dev/null")
 
 
 def gdal_progress(complete, message, data) -> None:
@@ -15,6 +18,20 @@ def gdal_progress(complete, message, data) -> None:
     if complete == 1.0:
         print()
     return 1
+
+
+def fetch_bluetopo_data(download_path: str, tile_bounds: str) -> None:
+    """
+    Downloads BlueTopo tiles for the area of interest and builds a VRT.
+
+    download_path: str
+        Directory where tiles will be saved
+    tile_bounds: str
+        Path to {tile}.gpkg
+    """
+    print("\n--------- Step 1/6: Fetching BlueTopo Data ---------")
+    fetch_tiles(download_path, tile_bounds)
+    build_vrt(download_path)
 
 
 def reproject_files(files: list, output_file: str, type: str, num_threads: int = 6):

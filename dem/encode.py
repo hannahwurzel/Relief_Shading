@@ -19,7 +19,7 @@ def encode_dem_to_rgba(
     output_file: str
         location where you want the output rgba encoded dem
     block_size: int
-        #TO DO
+        size of data chunks to be processed at a time
     depth_min: float
         minimum depth value across all tiles
     depth_max: float

@@ -9,6 +9,13 @@ gdal.UseExceptions()
 def run_batch_hillshading(tile: str, utm: int, base_dir: str) -> None:
     """
     Runs gdal hillshade on all BlueTopo_*.tiff files using multidirectional shading and a z factor of 1.5.
+
+    tile: str
+        a string denoting the tile we are working with (eg. 7_38_48)
+    utm: int
+        the UTM zone for this section of data
+    base_dir: str
+        base directory where all of the files live
     """
     base = Path(base_dir) / "Tile_Data"
     files = sorted(base.glob(f"{tile}/BlueTopo/UTM{utm}/BlueTopo_*.tiff"))
@@ -43,6 +50,13 @@ def run_batch_hillshading(tile: str, utm: int, base_dir: str) -> None:
 def combine_hillshades(tile: str, utm: str, base_dir: str) -> None:
     """
     Combines individual hillshade tiles into a single mosaic file.
+
+    tile: str
+        a string denoting the tile we are working with (eg. 7_38_48)
+    utm: int
+        the UTM zone for this section of data
+    base_dir: str
+        base directory where all of the files live
     """
     print(f"Combining UTM{utm} hillshades...")
     base = Path(base_dir) / "Tile_Data"
