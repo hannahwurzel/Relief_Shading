@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from osgeo import gdal
+import numpy as np
 
 gdal.UseExceptions()
 
@@ -11,18 +12,20 @@ def run_mosaic_hillshading(tile: str, base_dir: str) -> None:
     """
     base = Path(base_dir) / "Tile_Data"
     input_output_dir = base / tile / "Mosaic"
+    filename = "Mosaic_hillshade_z2_cubic.tiff"
 
     print("Starting hillshading...")
     dem_options = gdal.DEMProcessingOptions(
         multiDirectional=True,
-        zFactor=1.5,
+        zFactor=2.0,
     )
     gdal.DEMProcessing(
-        str(input_output_dir / f"Mosaic_hillshade.tiff"),
+        str(input_output_dir / filename),
         str(input_output_dir / f"Mosaic.tiff"),
         "hillshade",
         options=dem_options,
     )
+
     print("Hillshading complete.")
 
 
