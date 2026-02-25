@@ -13,8 +13,11 @@ from data.utils import (
 from dem.encode import encode_dem_to_rgba
 from hillshading.bluetopo_utils import (
     combine_hillshades,
+    mask_land_data,
     run_batch_hillshading,
 )
+
+SKIP_TILES = {}
 
 
 def parse_args():
@@ -28,7 +31,7 @@ def parse_args():
     parser.add_argument(
         "--base_dir",
         help="Base directory where No_Mosaic/ and Contains_Mosaic/ live",
-        default="/Volumes/Crucial X10/QGIS/relief_by_tile",
+        default="/Volumes/Crucial X10/relief_by_tile",
     )
     parser.add_argument(
         "--zoom_levels", help="Zoom levels for tile generation", default="7-15"
@@ -48,7 +51,7 @@ def crop_to_tile(tile: str, base_dir: str) -> None:
     base_dir: str
         base directory where all of the files live
     """
-    print("\n--------- Step 4/6: Croping data to tile extent ---------")
+    print("\n--------- Step 5/7: Croping data to tile extent ---------")
     base = Path(base_dir) / "Tile_Data"
     boundary_dir = Path(base_dir) / "Tile_Bounds" / f"{tile}.gpkg"
 
@@ -75,7 +78,7 @@ def reproject_data(tile: str, base_dir: str) -> None:
     base_dir: str
         base directory where all of the files live
     """
-    print("\n--------- Step 3/6: Reprojecting Data to Mercator ---------")
+    print("\n--------- Step 4/7: Reprojecting Data to Mercator ---------")
     hs_dir = Path(f"{base_dir}/Tile_Data/{tile}/hillshading/")
     hs_files = glob(f"{hs_dir}/HS*")
     dem_dir = Path(f"{base_dir}/Tile_Data/{tile}/BlueTopo_VRT/")
@@ -102,7 +105,9 @@ def process_data(data_dir: str, tile: str) -> None:
         print(f"No UTM directories found in Tile_Data/{tile}/BlueTopo")
         sys.exit(1)
 
-    print("\n--------- Step 2/6: Running hillshading ---------")
+    mask_land_data(tile, data_dir)
+
+    print("\n--------- Step 3/7: Running hillshading ---------")
     for utm in utms:
         run_batch_hillshading(tile, utm, data_dir)
         combine_hillshades(tile, utm, data_dir)
@@ -130,30 +135,20 @@ def generate_tiles(
     """
     input_dem_file = f"{data_dir}/Tile_Data/{tile}/Cropped/dem_cropped.tif"
     rgba_output_file = f"{data_dir}/Tile_Data/{tile}/Cropped/dem_rgba.tif"
-    xyz_dem_output_dir = f"{data_dir}/Tile_Data/{tile}/XYZ/DEM"
+    dem_output_dir = f"{Path(data_dir).parent}/XYZ/DEM"
 
-    print("\n--------- Step 5/6: Encoding DEM to RGBA ---------")
+    print("\n--------- Step 6/7: Encoding DEM to RGBA ---------")
     encode_dem_to_rgba(input_dem_file, rgba_output_file)
 
-    print("\n--------- Step 6/6: Generating XYZ tiles ---------")
-    generate_xyz_tiles(
-        rgba_output_file,
-        xyz_dem_output_dir,
-        zoom_levels,
-        processes,
-    )
+    print("\n--------- Step 7/7: Generating XYZ tiles ---------")
+    generate_xyz_tiles(rgba_output_file, dem_output_dir, zoom_levels, processes)
 
     # only generate tiles for hillshading if it does not contain mosaic multibeam areas
     # if it does, this needs to be generated in QGIS as manual cropping needs to be done
     if not mosaic:
         input_hs_file = f"{data_dir}/Tile_Data/{tile}/Cropped/HS_cropped.tif"
-        output_hs_tiles = f"{data_dir}/Tile_Data/{tile}/XYZ/hillshade"
-        generate_xyz_tiles(
-            input_hs_file,
-            output_hs_tiles,
-            zoom_levels,
-            processes,
-        )
+        output_hs_tiles = f"{Path(data_dir).parent}/XYZ/hillshade"
+        generate_xyz_tiles(input_hs_file, output_hs_tiles, zoom_levels, processes)
 
 
 def main() -> None:
@@ -166,12 +161,16 @@ def main() -> None:
             for f in (Path(dataset) / "Tile_Bounds").iterdir()
             if f.suffix == ".gpkg" and re.fullmatch(r"\d+_\d+_\d+", f.stem)
         ]
-        includes_mosaic = datasets[0].endswith("Contains_Mosaic")
+        includes_mosaic = dataset.endswith("Contains_Mosaic")
 
         for idx, tile in enumerate(tiles):
             print(
                 f"\n___________ Tile Number {idx + 1} / {len(tiles)} for {dataset.split('/')[-1]} directory ___________"
             )
+            if tile in SKIP_TILES:
+                print(f"Skipping tile {tile}.")
+                continue
+
             download_path = Path(dataset) / "Tile_Data" / tile
             tile_path = Path(dataset) / "Tile_Bounds" / f"{tile}.gpkg"
 

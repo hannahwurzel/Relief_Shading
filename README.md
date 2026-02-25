@@ -1,7 +1,5 @@
 # CR Relief Shading
-This repo handles BlueTopo data to create relief shading charts per a given tile region. 
-
-Process: fetches bluetopo data --> runs hillshading --> combines UTM hillshades --> reprojects data to Mercator --> crops data to tile specifications --> encodes DEM to RGBA --> generates XYZ tiles.
+This repo handles BlueTopo and Mosaic Multibeam data to create relief shading charts per a given tile region.
 
 ## Environment
 I find it best to run this inside of a conda environment as gdal can be finicky. 
@@ -15,7 +13,7 @@ You can download the BlueTopo data using the instructions from this repo: https:
 - Use your {tile}.gpkg as the area of interest.
 - The download path should be Tile_Data/{tile}/
 
-### File Structure
+#### File Structure
 
 - {base_dir}/
     - {data_dir}/
@@ -30,12 +28,28 @@ You can download the BlueTopo data using the instructions from this repo: https:
 
 Both BlueTopo/ and BlueTopo_VRT/ are generating when gathering the BlueTopo Data.
 
-## Script
-
-### Command
+#### Command
 `python data/process_data.py`
 
 #### Optional Parameters
 - `--base_dir`: Base directory of No_Mosaic/ and Contains_Mosaic/
 - `--zoom_levels`: Zoom levels to generate XYZ tiles for
 - `--processes`: Number of processes to run on for tile generation
+
+
+### Mosaic Multibeam 
+You can download the data here: https://www.ncei.noaa.gov/maps/grid-extract/. Do it in sections by using your tile boundary as of the area of interst.
+
+#### Hillshading
+Once you have the data saved off run `python hillshading/mosaic.py` to run hillshading.
+
+
+
+## Steps to Create Relief Charts
+- Run the process data script: `python data/process_data.py`
+- Gather the multibeam data
+- Run `python hillshading/mosaic.py`
+- Crop the noise out of the multibeam data in QGIS
+- In all tiles containing mosaic data, place the bluetopo hillshading underneath it to get a smooth hillshading
+- Generate XYZ tiles for these in QGIS. Save into folders based on region. (ex. base dir: mosaic_xyz, sub_dirs: 7_54_34, 7_34_56, etc.)
+- Run the `hillshading/mosaic_tiles.py` script to combine these XYZ tiles correctly

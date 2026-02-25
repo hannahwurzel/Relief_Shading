@@ -8,7 +8,7 @@ def encode_dem_to_rgba(
     input_file: str,
     output_file: str,
     block_size: int = 14000,
-    depth_min: float = -5000.0,
+    depth_min: float = -6000.0,
     depth_max: float = 500.0,
 ) -> None:
     """

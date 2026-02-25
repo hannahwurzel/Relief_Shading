@@ -1,6 +1,13 @@
+from glob import glob
+
+import numpy as np
 from osgeo import gdal
 import sys
 from pathlib import Path
+
+import rasterio
+
+from data.utils import gdal_progress
 
 
 gdal.UseExceptions()
@@ -39,10 +46,7 @@ def run_batch_hillshading(tile: str, utm: int, base_dir: str) -> None:
             str(output_file), str(file), "hillshade", options=dem_options
         )
 
-        percent = current * 100 // total
-        filled = percent // 2
-        bar = "█" * filled + "░" * (50 - filled)
-        print(f"\r[{bar}] {current}/{total} ({percent}%)", end="", flush=True)
+        gdal_progress(current / total, None, None)
 
     print(f"\nUTM{utm} hillshading complete.")
 
@@ -79,3 +83,30 @@ def combine_hillshades(tile: str, utm: str, base_dir: str) -> None:
 
     vrt_path.unlink()
     print(f"Combined hillshades saved to {merged_output}")
+
+
+def mask_land_data(tile: str, base_dir: str) -> None:
+    print("\n--------- Step 2/7: Masking Land Data ---------")
+    base = Path(base_dir) / "Tile_Data"
+    files = sorted(base.glob(f"{tile}/BlueTopo/UTM*/BlueTopo_*.tiff"))
+
+    if not files:
+        print(f"No BlueTopo_*.tiff files found.")
+        sys.exit(1)
+
+    total = len(files)
+    for current, file in enumerate(files, start=1):
+        with rasterio.open(file) as src:
+            data = src.read(1)
+            profile = src.profile
+            nodata_val = src.nodata if src.nodata is not None else -9999
+
+        data = np.where(data >= 0, nodata_val, data)
+
+        profile.update(dtype=rasterio.float32, nodata=nodata_val)
+        with rasterio.open(file, "w", **profile) as dst:
+            dst.write(data.astype(np.float32), 1)
+
+        gdal_progress(current / total, None, None)
+
+    print(f"Land masking complete.")
