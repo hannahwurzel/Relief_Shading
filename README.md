@@ -43,6 +43,10 @@ You can download the data here: https://www.ncei.noaa.gov/maps/grid-extract/. Do
 #### Hillshading
 Once you have the data saved off run `python hillshading/mosaic.py` to run hillshading.
 
+#### Miscellaneous
+There are a few helper files I created when I ran into random issues:
+- `dem/pad_dem.py`: I noticed that there were specific regions with entire sizes missing exactly one pixel in width. This script adds a row or column of pixels to get rid of this gap.
+- `tiles/overview_dem_tiles.py`: This script generates and overview from my base zoom. This is used to create XYZ tiles that are larger than my base.
 
 
 ## Steps to Create Relief Charts
