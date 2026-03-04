@@ -1,3 +1,4 @@
+from glob import glob
 from pathlib import Path
 import shutil
 import subprocess
@@ -190,3 +191,10 @@ def generate_xyz_tiles(
         f"Copied {copied} new, replaced {replaced} with better tiles, skipped {skipped}"
     )
     return True
+
+
+input_files = glob(f"/Volumes/Crucial X10/relief_by_tile/Low_Zoom/DEM_RGBA/*")
+output_dir = "/Volumes/Crucial X10/relief_by_tile/XYZ/DEM"
+
+for file in input_files:
+    generate_xyz_tiles(file, output_dir, "3-6", 4)
