@@ -99,7 +99,7 @@ def main():
     if args.inplace:
         dst_root = src_root
     else:
-        dst_root = src_root.parent / "alpha"
+        dst_root = src_root / "alpha"
 
     tiles = collect_tiles(src_root)
     if not tiles:
